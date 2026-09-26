@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AgroPulse ENSO: Predictive Resilience Engine</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="layout-container">
+    <header class="navbar">
+      <h1>AgroPulse ENSO <span class="badge">Predictive Resilience Engine</span></h1>
+      <p>Agricultural FMCG Commodity Pricing Model Under El Niño Disruptions</p>
+    </header>
+
+    <main class="dashboard-grid">
+      <!-- Sidebar Controls -->
+      <aside class="card controls-card">
+        <h2>Simulation Settings</h2>
+        
+        <div class="control-group">
+          <label for="cropSelect">Choose Agricultural Commodity</label>
+          <select id="cropSelect">
+            <optgroup label="Grains & Cereals">
+              <option value="Rice" selected>Rice (Paddy)</option>
+              <option value="Wheat">Wheat</option>
+              <option value="Maize">Maize (Corn)</option>
+              <option value="Barley">Barley</option>
+            </optgroup>
+            <optgroup label="Pulses (High Vulnerability)">
+              <option value="Tur_Arhar">Tur / Arhar (Pigeon Pea)</option>
+              <option value="Chana_Gram">Chana (Bengal Gram)</option>
+              <option value="Moong">Moong Dal</option>
+              <option value="Urad">Urad Dal</option>
+            </optgroup>
+            <optgroup label="Oilseeds & Cash Crops">
+              <option value="Soybean">Soybean (Edible Oil)</option>
+              <option value="Mustard">Mustard Seed</option>
+              <option value="Groundnut">Groundnut (Peanut)</option>
+              <option value="Sugarcane">Sugarcane (Sugar/FMCG)</option>
+            </optgroup>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="scenarioSelect">Choose El Niño Scenario</label>
+          <select id="scenarioSelect">
+            <option value="mild">Mild El Niño (SST +0.5°C to +0.9°C)</option>
+            <option value="moderate" selected>Moderate El Niño (SST +1.0°C to +1.4°C)</option>
+            <option value="severe">Severe El Niño (SST ≥ +1.5°C)</option>
+          </select>
+        </div>
+
+        <div class="control-group-toggle">
+          <label>
+            <input type="checkbox" id="diversifiedSourcing" checked />
+            Enable Regional Sourcing Mitigation
+          </label>
+        </div>
+
+        <button id="runSimBtn" class="btn-primary">Start Simulation</button>
+      </aside>
+
+      <!-- Main Results Display -->
+      <div class="main-content">
+        <!-- Initial Placeholder State (Before clicking button) -->
+        <section id="placeholderBox" class="card placeholder-card">
+          <div class="placeholder-icon">⚡</div>
+          <h3>Simulation Ready</h3>
+          <p>Select your target FMCG crop and El Niño shock parameters on the left, then click <strong>"Start Simulation"</strong> to execute the pricing resilience model.</p>
+        </section>
+
+        <!-- Results Container (Hidden by default) -->
+        <div id="resultsWrapper" class="results-hidden">
+          <!-- Price Metric Cards -->
+          <section class="scenario-cards-row">
+            <div class="scenario-card normal">
+              <span class="scenario-label">Original Price (No El Niño)</span>
+              <div class="price-container">
+                <span class="scenario-price" id="cardOgPrice">₹0</span>
+                <span class="retail-sub" id="cardOgRetail">₹0/kg</span>
+              </div>
+              <span class="scenario-tag tag-normal">Baseline Market Rate</span>
+            </div>
+
+            <div class="scenario-card shock">
+              <span class="scenario-label" id="selectedScenarioLabel">Simulated Scenario Price</span>
+              <div class="price-container">
+                <span class="scenario-price" id="cardSimPrice">₹0</span>
+                <span class="retail-sub" id="cardSimRetail">₹0/kg</span>
+              </div>
+              <span class="scenario-tag tag-shock" id="cardSurgeTag">+0% Surge</span>
+            </div>
+
+            <div class="scenario-card delta">
+              <span class="scenario-label">Net Absolute Price Hike</span>
+              <div class="price-container">
+                <span class="scenario-price text-danger" id="cardDeltaPrice">+₹0</span>
+                <span class="retail-sub" id="cardDeltaRetail">+₹0/kg</span>
+              </div>
+              <span class="scenario-tag tag-delta">Procurement Overhead</span>
+            </div>
+          </section>
+
+          <!-- Explanation Diagnostic Box -->
+          <section class="card explanation-card">
+            <h3>Diagnostic: Drivers Behind the Price Hike</h3>
+            <p id="explanationText">Running diagnostic...</p>
+          </section>
+
+          <!-- 2-Bar Comparison Graph -->
+          <section class="card chart-card">
+            <h2>Modal Price Comparison: Original vs. Simulated Shock (<span id="chartCropTitle">Rice</span>)</h2>
+            <div class="chart-wrapper">
+              <canvas id="priceComparisonChart"></canvas>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
