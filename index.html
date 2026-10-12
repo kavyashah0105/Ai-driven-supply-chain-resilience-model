@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgroPulse ENSO - Enterprise Agronomic Intelligence</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111827;
+      --border: #1f2937;
+      --accent: #2563eb;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --green: #10b981;
+      --red: #ef4444;
+      --amber: #f59e0b;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background-color: var(--bg); color: var(--text-main); min-height: 100vh; padding: 24px; }
+    
+    .header { margin-bottom: 24px; border-bottom: 1px solid var(--border); padding-bottom: 18px; display: flex; justify-content: space-between; align-items: flex-end; }
+    .header-title h1 { font-size: 1.6rem; font-weight: 700; color: #ffffff; display: flex; align-items: center; gap: 10px; }
+    .header-title h1 span.pulse-dot { width: 10px; height: 10px; background-color: var(--green); border-radius: 50%; box-shadow: 0 0 10px var(--green); display: inline-block; }
+    .header-title p { color: var(--text-muted); font-size: 0.85rem; margin-top: 5px; }
+    .header-badge { font-size: 0.75rem; text-transform: uppercase; font-weight: 700; letter-spacing: 0.08em; padding: 6px 12px; background-color: #1e293b; border: 1px solid #334155; border-radius: 20px; color: #94a3b8; }
+
+    .layout { display: grid; grid-template-columns: 410px 1fr; gap: 24px; max-width: 1550px; margin: 0 auto; }
+    .card { background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    label { display: block; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 5px; }
+    select, input[type="number"], button { width: 100%; padding: 9px 12px; border-radius: 8px; font-size: 0.85rem; }
+    select, input[type="number"] { background-color: #1a2234; border: 1px solid #2d3748; color: #ffffff; outline: none; }
+    
+    .checkbox-container { display: flex; align-items: flex-start; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+    .checkbox-container input { margin-top: 3px; accent-color: var(--accent); width: 16px; height: 16px; cursor: pointer; }
+    .checkbox-container label { text-transform: none; font-size: 0.8125rem; color: #e5e7eb; cursor: pointer; }
+
+    button { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border: none; font-weight: 600; cursor: pointer; margin-top: 16px; padding: 12px; border-radius: 8px; font-size: 0.9rem; }
+    button:hover { background: linear-gradient(135deg, #1d4ed8, #1e40af); }
+
+    /* Top 3 Stat Cards */
+    .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+    .metric-card { background: linear-gradient(180deg, #162032 0%, #111827 100%); border: 1px solid var(--border); border-radius: 10px; padding: 18px 20px; position: relative; }
+    .metric-card.og::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--green); }
+    .metric-card.inflated { border-color: rgba(239, 68, 68, 0.4); background: linear-gradient(180deg, #2a151b 0%, #111827 100%); }
+    .metric-card.inflated::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--red); }
+    .metric-card.delta { border-color: rgba(245, 158, 11, 0.4); background: linear-gradient(180deg, #2a2115 0%, #111827 100%); }
+    .metric-card.delta::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--amber); }
+
+    .metric-header { display: flex; justify-content: space-between; align-items: center; }
+    .metric-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+    .metric-tag { font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+    .metric-tag.danger { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .metric-tag.success { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .metric-tag.warning { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+
+    .metric-value { font-size: 1.75rem; font-weight: 800; color: #ffffff; margin-top: 8px; }
+    .metric-sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+
+    /* Yield Quality Card */
+    .quality-card { background-color: #111827; border: 1px solid var(--border); border-left-width: 6px; border-left-style: solid; border-radius: 10px; padding: 18px 20px; margin-bottom: 20px; }
+    .quality-card.grade-a { border-left-color: var(--green); }
+    .quality-card.grade-b { border-left-color: var(--amber); }
+    .quality-card.grade-c { border-left-color: var(--red); }
+
+    .quality-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .quality-title { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 700; }
+    .quality-badge { font-size: 1.1rem; font-weight: 800; }
+    .quality-badge.grade-a { color: var(--green); }
+    .quality-badge.grade-b { color: var(--amber); }
+    .quality-badge.grade-c { color: var(--red); }
+
+    .quality-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.825rem; color: #cbd5e1; }
+    .quality-item strong { color: #ffffff; }
+    .quality-item.full-width { grid-column: span 2; border-top: 1px solid rgba(255, 255, 255, 0.07); padding-top: 8px; margin-top: 2px; }
+
+    /* Interactive Chart Card */
+    .chart-card { background-color: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 22px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+    .chart-title { font-size: 0.9rem; font-weight: 700; color: #f1f5f9; }
+    .chart-legend { display: flex; gap: 14px; font-size: 0.75rem; color: var(--text-muted); }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-color { width: 10px; height: 10px; border-radius: 2px; }
+
+    .chart-wrapper { position: relative; height: 320px; width: 100%; }
+    .placeholder { display: flex; justify-content: center; align-items: center; height: 420px; color: #64748b; font-size: 0.95rem; border: 2px dashed #273549; border-radius: 12px; }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-title">
+      <h1><span class="pulse-dot"></span> AgroPulse ENSO Enterprise Platform</h1>
+      <p>Coupled Macro &amp; Remote Sensing Agronomic Engine</p>
+    </div>
+    <div class="header-badge">Real-Time Simulation Ready</div>
+  </header>
+
+  <main class="layout">
+    <aside class="card">
+      <form action="/simulate" method="POST">
+        <div class="form-group">
+          <label for="crop">Target Commodity</label>
+          <select name="crop" id="crop">
+            {% for key, val in crops.items() %}
+              <option value="{{ key }}" {% if selected_crop == key %}selected{% endif %}>
+                {{ val.name }} ({{ val.category }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="scenario">ENSO Disruption Shock</label>
+            <select name="scenario" id="scenario">
+              {% for sc in scenarios %}
+                <option value="{{ sc }}" {% if selected_scenario == sc %}selected{% endif %}>{{ sc }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="iod_phase">Indian Ocean Dipole</label>
+            <select name="iod_phase" id="iod_phase">
+              <option value="Positive" {% if selected_iod == "Positive" %}selected{% endif %}>+IOD (Mitigating)</option>
+              <option value="Neutral" {% if selected_iod == "Neutral" %}selected{% endif %}>Neutral IOD</option>
+              <option value="Negative" {% if selected_iod == "Negative" %}selected{% endif %}>-IOD (Aggravating)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="soil_moisture_deficit">Soil Deficit (%)</label>
+            <input type="number" step="1" min="0" max="80" name="soil_moisture_deficit" id="soil_moisture_deficit" value="{{ soil_moisture_deficit }}">
+          </div>
+          <div class="form-group">
+            <label for="heat_stress_days">Heat Days (&gt;35°C Anthesis)</label>
+            <input type="number" step="1" min="0" max="30" name="heat_stress_days" id="heat_stress_days" value="{{ heat_stress_days }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="reservoir_level_pct">Reservoir Live Storage (%)</label>
+            <input type="number" step="1" min="10" max="100" name="reservoir_level_pct" id="reservoir_level_pct" value="{{ reservoir_level_pct }}">
+          </div>
+          <div class="form-group">
+            <label for="pest_index">Biotic Pest Severity (1.0 - 2.2)</label>
+            <input type="number" step="0.1" min="1.0" max="2.2" name="pest_index" id="pest_index" value="{{ pest_index }}">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="ndvi_anomaly">NDVI Anomaly (Satellite)</label>
+            <input type="number" step="0.01" min="-0.60" max="0.30" name="ndvi_anomaly" id="ndvi_anomaly" value="{{ ndvi_anomaly }}">
+          </div>
+          <div class="form-group">
+            <label for="water_table_depth">Water Table (m depth)</label>
+            <input type="number" step="0.5" min="2" max="30" name="water_table_depth" id="water_table_depth" value="{{ water_table_depth }}">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="freight_index">Mandi Freight &amp; Logistics Index (100 = Base)</label>
+          <input type="number" step="1" min="80" max="160" name="freight_index" id="freight_index" value="{{ freight_index }}">
+        </div>
+
+        <div class="checkbox-container">
+          <input type="checkbox" name="mitigation" value="true" id="mitigation" {% if mitigation_checked %}checked{% endif %}>
+          <label for="mitigation">
+            Enable Regional Sourcing Mitigation
+            <span style="display:block; font-size:0.72rem; color:var(--text-muted); margin-top:2px;">Diversifies procurement across secondary, non-affected agro-climatic corridors.</span>
+          </label>
+        </div>
+
+        <button type="submit">Run Disruption &amp; Quality Model</button>
+      </form>
+    </aside>
+
+    <section>
+      {% if has_results %}
+        <div class="metrics-grid">
+          <!-- Card 1: OG Baseline Price -->
+          <div class="metric-card og">
+            <div class="metric-header">
+              <span class="metric-label">OG Baseline Price</span>
+              <span class="metric-tag success">Baseline</span>
+            </div>
+            <div class="metric-value">₹{{ base_price }}</div>
+            <div class="metric-sub">₹{{ base_retail }}/kg (Wholesale Modal)</div>
+          </div>
+
+          <!-- Card 2: Inflated Shock Price -->
+          <div class="metric-card inflated">
+            <div class="metric-header">
+              <span class="metric-label">Inflated Shock Price</span>
+              <span class="metric-tag danger">Inflated</span>
+            </div>
+            <div class="metric-value" style="color: #f87171;">₹{{ simulated_price }}</div>
+            <div class="metric-sub">₹{{ simulated_retail }}/kg (New Mandi Rate)</div>
+          </div>
+
+          <!-- Card 3: Change in Price (Delta) -->
+          <div class="metric-card delta">
+            <div class="metric-header">
+              <span class="metric-label">Change in Price</span>
+              <span class="metric-tag warning">+{{ surge_pct_display }}</span>
+            </div>
+            <div class="metric-value" style="color: #fbbf24;">{{ price_delta }}</div>
+            <div class="metric-sub">{{ delta_retail }}/kg price surge | SCRI: {{ scri_score }}</div>
+          </div>
+        </div>
+
+        <!-- Yield Quality Diagnostic Card -->
+        <div class="quality-card {{ quality.css_class }}">
+          <div class="quality-top">
+            <span class="quality-title">Expected Agronomic Harvest Quality</span>
+            <div class="quality-badge {{ quality.css_class }}">{{ quality.grade }}</div>
+          </div>
+          <div class="quality-details">
+            <div class="quality-item"><strong>Grain Health:</strong> {{ quality.grain_health }}</div>
+            <div class="quality-item"><strong>Defect Rate:</strong> {{ quality.defect_pct }}</div>
+            <div class="quality-item full-width"><strong>Procurement Impact:</strong> {{ quality.market_impact }}</div>
+          </div>
+        </div>
+
+        <!-- Hidden data carrier feeding Chart.js -->
+        <div id="data-store" 
+             data-base="{{ raw_base_price }}" 
+             data-shock="{{ raw_simulated_price }}" 
+             data-crop="{{ crop_name }}" 
+             style="display: none;"></div>
+
+        <!-- Clean 2-Bar Interactive Comparison Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Wholesale Procurement Impact: {{ crop_name }}</span>
+            <div class="chart-legend">
+              <div class="legend-item"><span class="legend-color" style="background:#10b981;"></span> OG Baseline Price</div>
+              <div class="legend-item"><span class="legend-color" style="background:#ef4444;"></span> Inflated Shock Price</div>
+            </div>
+          </div>
+          <div class="chart-wrapper">
+            <canvas id="disruptionChart"></canvas>
+          </div>
+        </div>
+
+        <script>
+          const store = document.getElementById('data-store');
+          if (store) {
+            const baseVal = parseFloat(store.getAttribute('data-base')) || 0;
+            const shockVal = parseFloat(store.getAttribute('data-shock')) || 0;
+            const canvasElem = document.getElementById('disruptionChart');
+            
+            if (canvasElem) {
+              const ctx = canvasElem.getContext('2d');
+              new Chart(ctx, {
+                type: 'bar',
+                data: {
+                  labels: ['OG Baseline Price', 'Inflated Shock Price'],
+                  datasets: [{
+                    data: [baseVal, shockVal],
+                    backgroundColor: [
+                      'rgba(16, 185, 129, 0.75)',
+                      'rgba(239, 68, 68, 0.75)'
+                    ],
+                    borderColor: [
+                      '#10b981',
+                      '#ef4444'
+                    ],
+                    borderWidth: 2,
+                    borderRadius: 8,
+                    barPercentage: 0.45
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      backgroundColor: '#1f2937',
+                      titleColor: '#f9fafb',
+                      bodyColor: '#e5e7eb',
+                      borderColor: '#374151',
+                      borderWidth: 1,
+                      padding: 12,
+                      displayColors: false,
+                      callbacks: {
+                        label: function(context) {
+                          return 'Procurement: ₹' + Number(context.raw).toLocaleString('en-IN') + ' / Quintal';
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                      ticks: {
+                        color: '#9ca3af',
+                        callback: function(val) { return '₹' + val.toLocaleString('en-IN'); }
+                      }
+                    },
+                    x: {
+                      grid: { display: false },
+                      ticks: { color: '#e5e7eb', font: { weight: 'bold' } }
+                    }
+                  }
+                }
+              });
+            }
+          }
+        </script>
+      {% else %}
+        <div class="placeholder">
+          Adjust the multi-parameter climate, remote-sensing, and logistics levers on the left and submit to evaluate wholesale shock and harvest quality.
+        </div>
+      {% endif %}
+    </section>
+  </main>
+
+</body>
+</html>
